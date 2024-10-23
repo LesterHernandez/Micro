@@ -7,7 +7,9 @@
 
 extern int display(int x); 
 extern int re0(); 
-extern int rmodify(int x,char y); 
+extern int rmodify(int x,char y);
+void rutinaprincipal(void);
+void modificarMemoria(void);
 char rx_data[64],delimitador[]=" ";
 uint8_t n;
 uint8_t cmd_ready;
@@ -26,7 +28,7 @@ void miFuncion() {
 }
 
 void rd(void){
-	int momento = 1; 
+	int momento = 0; 
 	
 	momento++;
 	while (!(momento==16)){
@@ -54,7 +56,10 @@ void rm(void){
 	  sprintf(buffer, "\n\rR%d : 0x%x \n\r", numero,display(numero)); 
 					
     USART_putString(buffer); 
-	  rd();
+	cmd_ready = 0;
+		rutinaprincipal();
+	
+		
     
 		 
 	
@@ -73,6 +78,27 @@ void md(){
         addr++;
     } 
 	
+}
+
+void modificarMemoria(void) {
+    uint32_t direccion;
+    uint32_t valor;
+    uint32_t tamano = 1; 
+    
+    // Obtener la dirección de memoria
+    direccion = strtoul(instruction1, NULL, 16);  
+
+    // Obtener el valor a escribir
+    valor = strtoul(instruction2, NULL, 16);  
+
+    // Obtener el tamaño opcional
+    if (instruction3 != NULL) {
+        tamano = atoi(instruction3);  
+        if (tamano != 1 && tamano != 2 && tamano != 4) {
+            USART_putString("Error: Tamano incorrecto. Usa 1, 2 o 4 bytes.\n\r");
+            return;
+        }
+    }
 }
 typedef void (*func_ptr)(void); 
 void run(void){
@@ -113,13 +139,8 @@ void funcion(void){
 	sprintf(buffer,"\n\rLa direccion de miFuncion es: %p\n\r", (void*)miFuncion); 
   USART_putString(buffer);
 }
-int main(void){ 
-	USART_config(115200); 
-	
-	USART_putString("\n\r         Proyecto Final Microprocesadores 2022       \n\r");
-	USART_putString("                    Programa Monitor                 \n\r");
-	USART_putString("                      Grupo nose                     \n\r\n\r");
-	USART_putString(">> "); 
+void rutinaprincipal(void){
+	USART_putString(">> ");	
 	while(1){
 		if(cmd_ready){
 			if(!strcmp(rx_data,"xD")){ 
@@ -183,12 +204,20 @@ int main(void){
 			instruction2="";
 			instruction3="";
 			contador = 0;
-			
+			USART_putString(">> ");	
 			cmd_ready = 0;
-			USART_putString(">> ");
 	
 		}
 	} 
+	
+}
+int main(void){ 
+	USART_config(115200); 
+	
+	USART_putString("\n\r         Proyecto Final Microprocesadores 2024       \n\r");
+	USART_putString("                    Programa Monitor                 \n\r");
+	USART_putString("                      Grupo nose                     \n\r\n\r"); 
+	rutinaprincipal();
 }
 
  
