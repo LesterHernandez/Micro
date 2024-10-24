@@ -125,6 +125,9 @@ void mm(){
 }
 void bf(){
 
+	
+	while(instruction3 != NULL){
+		
 	uint32_t tempo;
 	uint32_t inicio;
 	uint32_t final;
@@ -181,6 +184,9 @@ void bf(){
 		
 			USART_putString("\n\r aqui no se recibio nada\n\r");
 		}
+	}
+	
+	USART_putString("\n\r Debe de haber un valor\n\r");
 }
   
 void run(void){ 
