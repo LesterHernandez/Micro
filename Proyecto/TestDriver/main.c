@@ -80,26 +80,46 @@ void md(){
 	
 }
 
-void modificarMemoria(void) {
-    uint32_t direccion;
+void mm(){
+		
+	  uint32_t direccion;
     uint32_t valor;
     uint32_t tamano = 1; 
-    
+
     // Obtener la dirección de memoria
     direccion = strtoul(instruction1, NULL, 16);  
+    
 
     // Obtener el valor a escribir
     valor = strtoul(instruction2, NULL, 16);  
+	  
 
     // Obtener el tamaño opcional
     if (instruction3 != NULL) {
-        tamano = atoi(instruction3);  
+        tamano = atoi(instruction3); 
         if (tamano != 1 && tamano != 2 && tamano != 4) {
-            USART_putString("Error: Tamano incorrecto. Usa 1, 2 o 4 bytes.\n\r");
-            return;
+            USART_putString("Error: Tamano incorrecto. Usa 1, 2 o 4 bytes.\n\r"); 
         }
     }
+
+    // Escribir el valor en la dirección indicada
+    //USART_putString("r: Tamano incorrecto. Usa 1, 2 o 4 bytes.\n\r");
+		if (tamano == 1) {
+        *((volatile uint8_t *)direccion) = (uint8_t)valor;
+    } else if (tamano == 2) {
+        *((volatile uint16_t *)direccion) = (uint16_t)valor;
+    } else if (tamano == 4) {
+        *((volatile uint32_t *)direccion) = valor;
+					
+    }
+
+    sprintf(buffer, "Memoria modificada en 0x%08X con valor 0x%X (%d bytes)\n\r", direccion, valor, tamano);
+    USART_putString(buffer);
+
+	
 }
+
+
 typedef void (*func_ptr)(void); 
 void run(void){
 	/*// Obtener la dirección de la función 
@@ -177,8 +197,7 @@ void rutinaprincipal(void){
 				 if(!strcmp(instruction,"MD")){
 							md();
 						}else if(!strcmp(instruction,"MM")){
-							sprintf(buffer, "\n\r MD: %s\n\r", instruction); 
-							USART_putString(buffer);
+							mm();
 						}else if(!strcmp(instruction,"RM")){
 							rm();
 						}else if(!strcmp(instruction,"BF")){
@@ -219,5 +238,3 @@ int main(void){
 	USART_putString("                      Grupo nose                     \n\r\n\r"); 
 	rutinaprincipal();
 }
-
- 
