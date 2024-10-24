@@ -4,12 +4,17 @@
 		PRESERVE8
 			
 		EXPORT display
-		EXPORT rmodify 
-		EXPORT re0 
- 
-re0
+		EXPORT rmodify  
+		EXPORT CALL
+		EXPORT RUN
+RUN 
 	push{lr}
+	bx r0
 	pop{pc}
+CALL
+	push{lr}
+	blx r0
+	pop{pc} 
  
 display 
 	push {lr} 

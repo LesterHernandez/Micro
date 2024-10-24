@@ -4,21 +4,27 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
-
-extern int display(int x); 
-extern int re0(); 
+//Funcion complementaria para ver el valor de los registros
+extern int display(int x);  
+//Funcion complementaria para cambiar el valor de un registro
 extern int rmodify(int x,char y);
-void rutinaprincipal(void);
-void modificarMemoria(void);
-char rx_data[64],delimitador[]=" ";
+//Funciones complementarias para el call y run
+extern void CALL(unsigned char *addr);
+extern void RUN(unsigned char *addr);
+//Funcion donde estara el bucle principal
+void rutinaprincipal(void); 
+char rx_data[64],delimitador[]=" ";//Delemitador " " es para cortar cada vez que hay un comando
 uint8_t n;
 uint8_t cmd_ready;
+//Contador cuenta por que instruccion va en la terminal
 uint8_t contador =0;
+//Donde se almacenan las instrucciones
 char *instruction = 0;
 char *instruction1 = 0;
 char *instruction2 = 0;
 char *instruction3 = 0;
 char *instruction4 = 0;
+//arreglo donde se guarda lo que se quiere mandar al put_string
 char buffer[64];
 
 void miFuncion() { 
@@ -26,11 +32,10 @@ void miFuncion() {
 	USART_putString(buffer);
 	
 }
-
+//COMANDO RD
 void rd(void){
+	//Conteo de los 16 registros
 	int momento = 0; 
-	
-	momento++;
 	while (!(momento==16)){
 		sprintf(buffer, "\n\rR%d : 0x%x \n\r", momento,display(momento)); 
 		USART_putString(buffer);
@@ -40,43 +45,43 @@ void rd(void){
 }
 
 void rm(void){
+	 //Puntero hacia el valor de instruction1
 	 const char *cadena = instruction1;
-	char *ptrR = strchr(cadena, 'R');
-     
-
-    // Verificar si después de 'R' hay un número
-    char *ptrNumero = ptrR + 1; // Saltar la 'R'
-     
-
-    // Extraer el número (considerando que puede tener varios dígitos)
-    int numero = atoi(ptrNumero);  // Convertir el número directamente 
-	  rmodify(numero,*instruction2);
-		sprintf(buffer, "\n\rR: 0x%d %c \n\r", numero,*instruction2); 
-	  USART_putString(buffer);
-	  sprintf(buffer, "\n\rR%d : 0x%x \n\r", numero,display(numero)); 
-					
-    USART_putString(buffer); 
-	cmd_ready = 0;
-		rutinaprincipal();
-	
-		
-    
-		 
-	
+	 //Encontrar la R
+	 char *ptrR = strchr(cadena, 'R');
+   // Verificar si después de 'R' hay un número
+   char *ptrNumero = ptrR + 1; // Saltar la 'R'
+   // Extraer el número y con atoi de una vez pasarlo a un int 
+   int numero = atoi(ptrNumero);  // Convertir el número directamente 
+	 //Llamar la funcion en .s
+	 rmodify(numero,*instruction2);
+	 sprintf(buffer, "\n\rRegistro cambiado: R%d  \n\r", numero);  			
+   USART_putString(buffer); 
+	//Reiniciar variables
+	 instruction="";
+	 instruction1="";
+	 instruction2="";
+	 instruction3="";
+	 contador = 0;
+	 cmd_ready = 0;
+	//Llamar a la rutina
+	 rutinaprincipal();
 }
 
 void md(){
-		
-	  unsigned long start_addr = strtoul(instruction1, NULL, 16);
-    unsigned long end_addr = strtoul(instruction2, NULL, 16); 
-	  unsigned char *start = (unsigned char*)start_addr;
-	  unsigned char *end =(unsigned char*)end_addr;
-	  unsigned char* addr = start;
-	  while (addr <= end) {
-			  sprintf(buffer,"\n\rAddress: %p, Value: 0x%02x\n\r", (void*)addr, *addr); 
-        USART_putString(buffer); 
-        addr++;
-    } 
+	 //Hexadecimal a entero sin signo
+	 unsigned long start_addr = strtoul(instruction1, NULL, 16);
+   unsigned long end_addr = strtoul(instruction2, NULL, 16); 
+	 //Castear las direcciones y asignarle el valor de la direccion
+	 unsigned char *start = (unsigned char*)start_addr;
+	 unsigned char *end =(unsigned char*)end_addr;
+	 unsigned char* addr = start;
+	 //Bucle para recorrer las direcciones
+	 while (addr <= end) {
+		 sprintf(buffer,"\n\rAddress: %p, Value: 0x%02x\n\r", (void*)addr, *addr); //Acceder a la direccion y el valor
+     USART_putString(buffer); 
+     addr++;
+   } 
 	
 }
 
@@ -177,40 +182,22 @@ void bf(){
 			USART_putString("\n\r aqui no se recibio nada\n\r");
 		}
 }
-
-typedef void (*func_ptr)(void); 
-void run(void){
-	/*// Obtener la dirección de la función 
-	unsigned long start_addr = strtoul(instruction1, NULL, 16);
-	unsigned char *addr = (unsigned char*)start_addr;
-	sprintf(buffer,"\n\rAddress: %p\n\r", (void*)addr); 
-  USART_putString(buffer);*/
+  
+void run(void){ 
   unsigned long start_addr = strtoul(instruction1, NULL, 16);
 	unsigned char *start = (unsigned char*)start_addr;
-	unsigned char* addr = start;  
-	sprintf(buffer,"\n\rLa direccion de miFuncion es: %p\n\r", (void*)addr); 
-  USART_putString(buffer);	
-	void (*ptr)() = miFuncion;
-  ptr();	
-	//08001d25
+	unsigned char* addr = start; 	
+	RUN(addr); 
+	 
 	 
 }
 
 
-void call(void){ 
-	/*unsigned long start_addr = strtoul(instruction1, NULL, 16);
-	unsigned char *addr = (unsigned char*)start_addr;
-	sprintf(buffer,"\n\rAddress: %p\n\r", (void*)addr); 
-  USART_putString(buffer); */
+void call(void){  
 	unsigned long start_addr = strtoul(instruction1, NULL, 16);
 	unsigned char *start = (unsigned char*)start_addr;
 	unsigned char* addr = start;  
-	sprintf(buffer,"\n\rLa direccion de miFuncion es: %p\n\r", (void*)addr); 
-  USART_putString(buffer);	
-	void (*ptr)() = miFuncion;
-  ptr();
-	
-	//08001d25
+	CALL(addr); 
 	 
 }
 void funcion(void){
@@ -221,62 +208,54 @@ void rutinaprincipal(void){
 	USART_putString(">> ");	
 	while(1){
 		if(cmd_ready){
-			if(!strcmp(rx_data,"xD")){ 
-				
-				rd();
-				   
-			}else{
-				 char *token = strtok(rx_data,delimitador);
-				 if(token != NULL){
-						while(token != NULL){
-							
-							if(contador==0){
-								instruction = token;
-								contador +=1;
-							}else if(contador==1){
-								instruction1 = token;
-								contador +=1;
-							}else if(contador==2){
-								instruction2 = token;
-								contador +=1;
-							}else if(contador==3){ 	
-								instruction3 = token;
-								contador +=1;
-							}else if(contador==4){
-								instruction4 = token;
-								contador +=1;
-							}
+			char *token = strtok(rx_data,delimitador);
+			if(token != NULL){
+				while(token != NULL){
+					if(contador==0){
+						instruction = token;
+						contador +=1;
+					}else if(contador==1){
+						instruction1 = token;
+						contador +=1;
+					}else if(contador==2){
+						instruction2 = token;
+						contador +=1;
+					}else if(contador==3){ 	
+						instruction3 = token;
+						contador +=1;
+					}else if(contador==4){
+						instruction4 = token;
+						contador +=1;
+					}
 							
 							
-							token = strtok(NULL, delimitador);
-						}
+					 token = strtok(NULL, delimitador);
+				}
 						
-				 }
-				 if(!strcmp(instruction,"MD")){
-							md();
-						}else if(!strcmp(instruction,"MM")){
-							mm();
-						}else if(!strcmp(instruction,"RM")){
-							rm();
-							////////
-						}else if(!strcmp(instruction,"BF")){
-							bf();
-							//////
-						}else if(!strcmp(instruction,"RUN")){
-							run();
-						}else if(!strcmp(instruction,"CALL")){
-							call();
-						}else if(!strcmp(instruction,"RD")){
-							sprintf(buffer, "\n\rR%d : 0x%x \n\r", 0,re0()); 
-	            USART_putString(buffer);
-							rd();
-						}else if(!strcmp(instruction,"Funcion")){
-							funcion();
-						}else{
-							USART_putString("\n\rComando no encontrado!!\n\r\n\r");
-						} 
-				 
 			}
+			if(!strcmp(instruction,"MD")){
+				md();
+			}else if(!strcmp(instruction,"MM")){
+				mm();
+			}else if(!strcmp(instruction,"RM")){
+				rm();
+							////////
+			}else if(!strcmp(instruction,"BF")){
+				bf();
+							//////
+			}else if(!strcmp(instruction,"RUN")){
+				run();
+			}else if(!strcmp(instruction,"CALL")){
+				call();
+			}else if(!strcmp(instruction,"RD")){ 
+				rd();
+			}else if(!strcmp(instruction,"Funcion")){
+				funcion();
+			}else{
+				USART_putString("\n\rComando no encontrado!!\n\r\n\r");
+			} 
+				 
+			//Reiniciar variables
 			instruction="";
 			instruction1="";
 			instruction2="";
