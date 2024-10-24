@@ -118,7 +118,65 @@ void mm(){
 
 	
 }
+void bf(){
 
+	uint32_t tempo;
+	uint32_t inicio;
+	uint32_t final;
+	uint32_t valor;
+	uint32_t tamano = 1;
+	
+	inicio = strtoul(instruction1, NULL, 16);
+	
+	final = strtoul(instruction2, NULL, 16);
+	
+	valor = strtoul(instruction3, NULL, 16);
+	
+	if(tamano != NULL){
+		tamano = atoi(instruction4);
+		if(tamano != 1 && tamano != 2 && tamano != 4){
+			USART_putString("Error: Tamano incorrecto. Usa 1, 2 o 4 bytes.\n\r");
+			return;
+		}
+	}
+	
+	if(tamano == 1){
+	
+		for(tempo = inicio;tempo <= final; tempo += tamano){
+		
+			memset((void*)tempo, (uint8_t) valor, tamano);
+		}
+		USART_putString("\n\rllenando byte a byte\n\r");
+		
+	}
+	else if((tamano == 2) || (tamano == 4)){
+		
+			for(tempo = inicio; tempo <= final; tempo += tamano){
+				switch(tamano){
+				
+					case 2:
+						*(uint16_t*) tempo = (uint16_t)valor;
+						USART_putString("\n\rllenando 2 byte\n\r");
+						break;
+					
+					case 4:
+					USART_putString("\n\rllenando 4 byte\n\r");	
+					*(uint32_t*) tempo = (uint32_t) valor;
+						break;
+					
+					default:
+						USART_putString("\n\rnada por aqui\n\r");
+					return;
+					
+				}
+			}
+				
+		}
+		else{
+		
+			USART_putString("\n\r aqui no se recibio nada\n\r");
+		}
+}
 
 typedef void (*func_ptr)(void); 
 void run(void){
@@ -200,9 +258,10 @@ void rutinaprincipal(void){
 							mm();
 						}else if(!strcmp(instruction,"RM")){
 							rm();
+							////////
 						}else if(!strcmp(instruction,"BF")){
-							sprintf(buffer, "\n\r MD: %s\n\r", instruction); 
-							USART_putString(buffer);
+							bf();
+							//////
 						}else if(!strcmp(instruction,"RUN")){
 							run();
 						}else if(!strcmp(instruction,"CALL")){
