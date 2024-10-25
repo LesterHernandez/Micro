@@ -69,20 +69,34 @@ void rm(void){
 }
 
 void md(){
-	 //Hexadecimal a entero sin signo
-	 unsigned long start_addr = strtoul(instruction1, NULL, 16);
-   unsigned long end_addr = strtoul(instruction2, NULL, 16); 
-	 //Castear las direcciones y asignarle el valor de la direccion
-	 unsigned char *start = (unsigned char*)start_addr;
-	 unsigned char *end =(unsigned char*)end_addr;
-	 unsigned char* addr = start;
-	 //Bucle para recorrer las direcciones
-	 while (addr <= end) {
-		 sprintf(buffer,"\n\rAddress: %p, Value: 0x%02x\n\r", (void*)addr, *addr); //Acceder a la direccion y el valor
-     USART_putString(buffer); 
-     addr++;
-   } 
-	
+   // Validar que instruction1 e instruction2 no sean nulas o vacías
+   if (strcmp(instruction1, "") == 0) {
+       instruction1 = "0x20000300";
+   }
+   if (strcmp(instruction2, "") == 0) {
+       instruction2 = "0x20000314";
+   }
+   
+   // Convertir las cadenas a direcciones de memoria
+   unsigned long start_addr = strtoul(instruction1, NULL, 16);
+   unsigned long end_addr = strtoul(instruction2, NULL, 16);
+   
+   // Validar que las direcciones sean correctas
+   if (start_addr == 0 || end_addr == 0 || start_addr > end_addr) {
+       USART_putString("Error: Direcciones de memoria no validas.\n\r");
+       return;
+   }
+
+   // Castear las direcciones y recorrer el rango
+   unsigned char *start = (unsigned char*)start_addr;
+   unsigned char *end = (unsigned char*)end_addr;
+   unsigned char *addr = start;
+   
+   while (addr <= end) {
+       sprintf(buffer, "\n\rAddress: %p, Value: 0x%02x\n\r", (void*)addr, *addr);
+       USART_putString(buffer);
+			addr++;
+		}
 }
 
 void mm(){
@@ -280,5 +294,9 @@ int main(void){
 	USART_putString("\n\r         Proyecto Final Microprocesadores 2024       \n\r");
 	USART_putString("                    Programa Monitor                 \n\r");
 	USART_putString("                      Grupo nose                     \n\r\n\r"); 
-	rutinaprincipal();
+	while(1){
+		
+		rutinaprincipal();
+	}
+	
 }
